@@ -27,22 +27,26 @@ func NewBalanceService(db *gorm.DB, balanceRepository repository.BalanceReposito
 }
 
 func (s *balanceService) TopUp(ctx context.Context, userid uint, amount int) (models.Balance, error) {
-	db := s.DB.Begin()
+	var db *gorm.DB = s.DB.Begin()
+
 	res, err := s.BalanceRepository.FetchByUserID(ctx, db, userid)
 	if err != nil {
 		return models.Balance{}, err
 	}
+
 	newBalance := amount + res.Balance
 	err = s.BalanceRepository.Update(ctx, db, newBalance, userid)
 	if err != nil {
 		db.Rollback()
 		return models.Balance{}, err
 	}
+
 	err = s.BalanceHistoryRepository.Create(ctx, db, amount, userid)
 	if err != nil {
 		db.Rollback()
 		return models.Balance{}, err
 	}
+
 	db.Commit()
 	return models.Balance{
 		UserID:  userid,

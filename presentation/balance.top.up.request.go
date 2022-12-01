@@ -1,6 +1,6 @@
 package presentation
 
 type BalanceTopUpRequest struct {
-	UserID uint `json:"userid" binding:"required"`
-	Amount int  `json:"amount" binding:"required"`
+	UserID uint `json:"userid" validate:"required"`
+	Amount int  `json:"amount" validate:"required"`
 }

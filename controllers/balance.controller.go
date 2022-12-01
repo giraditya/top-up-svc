@@ -2,10 +2,12 @@ package controllers
 
 import (
 	"net/http"
+	"top-up-service/helpers"
 	"top-up-service/presentation"
 	"top-up-service/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 type BalanceController interface {
@@ -25,19 +27,22 @@ func NewBalanceController(balanceService service.BalanceService) BalanceControll
 func (u *balanceController) TopUp(c *gin.Context) {
 	var request presentation.BalanceTopUpRequest
 	var response presentation.BalanceTopUpResponse
+	c.ShouldBindJSON(&request)
 
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	validate := validator.New()
+	if err := validate.Struct(request); err != nil {
+		helpers.ErrorValidate(c, http.StatusBadRequest, err)
 		return
 	}
+
 	result, err := u.BalanceService.TopUp(c.Request.Context(), request.UserID, request.Amount)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		helpers.ErrorResponse(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	response.UserID = result.UserID
 	response.Amount = result.Balance
 
-	c.JSON(http.StatusOK, gin.H{"data": response})
+	helpers.SuccessResponse(c, http.StatusOK, "TopUp Success", response)
 }
